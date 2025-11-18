@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+from html import escape
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
 
@@ -49,6 +50,78 @@ def run_dataset(
     else:
         print(f"Processed dataset '{dataset_key}'.")
     return save_artifacts(result, output_dir, dataset_key)
+
+
+def _update_outputs_index(output_dir: Path) -> None:
+    """Regenerates outputs/index.html with links to JSONL and HTML files."""
+    output_dir.mkdir(parents=True, exist_ok=True)
+    artifacts = {}
+    for path in output_dir.iterdir():
+        if not path.is_file():
+            continue
+        suffix = path.suffix.lower()
+        if suffix not in {".jsonl", ".html"}:
+            continue
+        prefix = path.stem
+        entry = artifacts.setdefault(
+            prefix,
+            {"dataset": prefix, "jsonl": None, "html": None},
+        )
+        if suffix == ".jsonl":
+            entry["jsonl"] = path.name
+        else:
+            entry["html"] = path.name
+    index_path = output_dir / "index.html"
+    rows = []
+    for dataset in sorted(artifacts.values(), key=lambda item: item["dataset"]):
+        jsonl_cell = (
+            f'<a href="{escape(dataset["jsonl"])}">{escape(dataset["jsonl"])}</a>'
+            if dataset["jsonl"]
+            else "-"
+        )
+        html_cell = (
+            f'<a href="{escape(dataset["html"])}">{escape(dataset["html"])}</a>'
+            if dataset["html"]
+            else "-"
+        )
+        rows.append(
+            "<tr>"
+            f"<td>{escape(dataset['dataset'])}</td>"
+            f"<td>{jsonl_cell}</td>"
+            f"<td>{html_cell}</td>"
+            "</tr>"
+        )
+    if not rows:
+        body = "<p>No artifacts have been generated yet.</p>"
+    else:
+        body = (
+            "<table>\n"
+            "  <thead><tr><th>Dataset</th><th>JSONL</th><th>HTML</th></tr></thead>\n"
+            "  <tbody>\n    "
+            + "\n    ".join(rows)
+            + "\n  </tbody>\n</table>"
+        )
+    html_text = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LangExtract Samples Outputs</title>
+  <style>
+    body {{ font-family: system-ui, sans-serif; margin: 2rem; }}
+    table {{ border-collapse: collapse; width: 100%; max-width: 960px; }}
+    th, td {{ border: 1px solid #ccc; padding: 0.5rem; text-align: left; }}
+    th {{ background: #f5f5f5; }}
+    tbody tr:nth-child(even) {{ background: #fafafa; }}
+  </style>
+</head>
+<body>
+  <h1>LangExtract Samples Outputs</h1>
+  <p>Artifacts are written to this directory after running the CLI.</p>
+  {body}
+</body>
+</html>
+"""
+    index_path.write_text(html_text, encoding="utf-8")
 
 
 def _comma_join(items: Iterable[str]) -> str:
@@ -160,6 +233,7 @@ def run_cli(
         print(f"\n{prefix}Saved structured output to: {jsonl_path}")
         print(f"{prefix}Saved visualization to:     {html_path}")
         print(f"{prefix}Open the HTML file in a browser to review highlighted spans.")
+    _update_outputs_index(args.output_dir)
 
 
 def main() -> None:

@@ -93,6 +93,8 @@ The script:
 
 Open the resulting HTML file (e.g.
 `outputs/romeo_sample.html`) in your browser to verify the highlighted spans.
+CLI 実行後は `outputs/index.html` が自動生成・更新されるので、ブラウザで開くと
+JSONL / HTML の一覧テーブルを確認できます。
 
 ### Medication Named Entity Recognition
 
