@@ -1,0 +1,36 @@
+{
+  "title": "Medication Named Entity Recognition",
+  "description": "Extract medication name, dosage, route, frequency, and duration from simple sentences.",
+  "prompt_description": "Extract medication information including medication name, dosage, route, frequency, and duration in the order they appear in the text.",
+  "default_input_text": "Patient took 400 mg PO Ibuprofen q4h for two days.",
+  "default_model_id": "gemini-2.5-pro",
+  "artifact_prefix": "medication_ner",
+  "summary_type": "basic",
+  "examples": [
+    {
+      "text": "Patient was given 250 mg IV Cefazolin TID for one week.",
+      "extractions": [
+        {
+          "extraction_class": "dosage",
+          "extraction_text": "250 mg"
+        },
+        {
+          "extraction_class": "route",
+          "extraction_text": "IV"
+        },
+        {
+          "extraction_class": "medication",
+          "extraction_text": "Cefazolin"
+        },
+        {
+          "extraction_class": "frequency",
+          "extraction_text": "TID"
+        },
+        {
+          "extraction_class": "duration",
+          "extraction_text": "for one week"
+        }
+      ]
+    }
+  ]
+}

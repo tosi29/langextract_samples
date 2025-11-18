@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from importlib import resources
+from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
 import langextract as lx
@@ -101,11 +102,82 @@ def _build_examples_from_config(
     return examples
 
 
+def _normalize_entry(
+    entry: Dict[str, Any],
+    *,
+    source_name: str,
+    default_key: Optional[str],
+) -> Dict[str, Any]:
+    """Ensures each entry has a dataset key, preferring filenames."""
+    normalized = dict(entry)
+    key = normalized.get("key") or default_key
+    if not key:
+        raise KeyError(
+            f"Dataset config '{source_name}' must provide a 'key' field "
+            "or rely on its filename to define the key."
+        )
+    normalized["key"] = key
+    return normalized
+
+
+def _read_config_dir(config_dir) -> Optional[List[Dict[str, Any]]]:
+    if not config_dir.is_dir():
+        return None
+    entries: List[Dict[str, Any]] = []
+    for path in sorted(
+        (item for item in config_dir.iterdir() if item.name.endswith(".json")),
+        key=lambda traversable: traversable.name,
+    ):
+        with path.open(encoding="utf-8") as f:
+            entry = json.load(f)
+        if not isinstance(entry, dict):
+            raise TypeError(f"Dataset config {path} must contain a JSON object.")
+        name = path.name
+        default_key = name[: -len(".json")] if name.endswith(".json") else name
+        entries.append(
+            _normalize_entry(
+                entry,
+                source_name=str(path),
+                default_key=default_key,
+            )
+        )
+    if not entries:
+        raise RuntimeError(f"No dataset configs were found inside {config_dir}")
+    return entries
+
+
 def _load_dataset_entries() -> List[Dict[str, Any]]:
-    """Loads dataset definitions from the bundled JSON file."""
-    data_path = resources.files(__package__) / "datasets.json"
+    """Loads dataset definitions from JSON files.
+
+    Primary source lives at <repo_root>/dataset/<key>.json (one file per dataset).
+    We keep compatibility fallbacks for the previous bundled locations.
+    """
+
+    repo_root = Path(__file__).resolve().parents[2]
+    new_location = repo_root / "dataset"
+    entries = _read_config_dir(new_location)
+    if entries:
+        return entries
+
+    # Fallback to the prior package-internal layout.
+    package_root = resources.files(__package__)
+    legacy_dir = package_root / "dataset_configs"
+    legacy_entries = _read_config_dir(legacy_dir)
+    if legacy_entries:
+        return legacy_entries
+
+    # Fallback for environments that still ship the old aggregated file.
+    data_path = package_root / "datasets.json"
     with data_path.open(encoding="utf-8") as f:
-        return json.load(f)
+        raw_entries = json.load(f)
+    if not isinstance(raw_entries, list):
+        raise TypeError(f"{data_path} must contain a list of dataset definitions.")
+    normalized_entries: List[Dict[str, Any]] = []
+    for idx, entry in enumerate(raw_entries):
+        normalized_entries.append(
+            _normalize_entry(entry, source_name=f"{data_path}[{idx}]", default_key=None)
+        )
+    return normalized_entries
 
 
 def _make_example_builder(

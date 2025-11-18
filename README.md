@@ -122,12 +122,13 @@ run-langextract-dataset --dataset medication_relationship --model-id gemini-2.5-
 
 ### データセット定義ファイル
 
-すべてのシナリオは `src/langextract_samples/datasets.json` に記述されています。
+すべてのシナリオは リポジトリ直下の `dataset/<key>.json`
+（1 ファイル 1 データセット）に記述されています。
 JSON 形式なので、Python コードを触らずに差し替え・追加が可能です。
 
-各エントリの主なフィールド:
+各エントリの主なフィールド（ファイル名が CLI で指定するキーになります。例:
+`dataset/romeo_quickstart.json` → `romeo_quickstart`）:
 
-- `key`: CLI で指定する識別子（例: `romeo_quickstart`）
 - `title` / `description`: `--list-datasets` の表示用メタデータ
 - `prompt_description`: LangExtract に渡す抽出指示
 - `default_input_text`: 標準入力テキスト
@@ -142,7 +143,7 @@ JSON 形式なので、Python コードを触らずに差し替え・追加が�
 
 ### 新しいデータセットの追加手順
 
-1. `datasets.json` に新しいオブジェクトを追加する。
+1. `dataset/` に `<key>.json` を追加する。
 2. 既存 CLI (`run-langextract-dataset`) で `--dataset 新キー` を実行する。
    必要なら `pyproject.toml` の `[project.scripts]` に専用エントリポイントを追加。
 

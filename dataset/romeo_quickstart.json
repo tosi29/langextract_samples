@@ -1,0 +1,37 @@
+{
+  "title": "Romeo & Juliet Quick Start",
+  "description": "Characters, emotions, and relationships using the README example.",
+  "prompt_description": "Extract characters, emotions, and relationships in order of appearance.\nUse exact text for extractions. Do not paraphrase or overlap entities.\nProvide meaningful attributes for each entity to add context.",
+  "default_input_text": "Lady Juliet gazed longingly at the stars, her heart aching for Romeo.",
+  "default_model_id": "gemini-2.5-flash",
+  "artifact_prefix": "romeo_juliet_basic",
+  "summary_type": "basic",
+  "examples": [
+    {
+      "text": "ROMEO. But soft! What light through yonder window breaks? It is the east, and Juliet is the sun.",
+      "extractions": [
+        {
+          "extraction_class": "character",
+          "extraction_text": "ROMEO",
+          "attributes": {
+            "emotional_state": "wonder"
+          }
+        },
+        {
+          "extraction_class": "emotion",
+          "extraction_text": "But soft!",
+          "attributes": {
+            "feeling": "gentle awe"
+          }
+        },
+        {
+          "extraction_class": "relationship",
+          "extraction_text": "Juliet is the sun",
+          "attributes": {
+            "type": "metaphor"
+          }
+        }
+      ]
+    }
+  ]
+}
