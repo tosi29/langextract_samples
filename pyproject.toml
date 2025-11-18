@@ -1,0 +1,19 @@
+[project]
+name = "langextract-samples"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "langextract",
+]
+
+[build-system]
+requires = ["hatchling>=1.21.1"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+run-langextract-example = "langextract_samples.romeo_example:main"
+run-medication-ner-example = "langextract_samples.medication_ner_example:main"
+run-medication-relationship-example = "langextract_samples.medication_relationship_example:main"
+run-langextract-dataset = "langextract_samples.runner:main"
