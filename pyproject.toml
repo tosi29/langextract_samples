@@ -12,8 +12,18 @@ dependencies = [
 requires = ["hatchling>=1.21.1"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build.targets.wheel]
+packages = ["src/langextract_samples"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/langextract_samples",
+    "README.md",
+    "pyproject.toml",
+]
+
 [project.scripts]
-run-langextract-example = "langextract_samples.romeo_example:main"
-run-medication-ner-example = "langextract_samples.medication_ner_example:main"
-run-medication-relationship-example = "langextract_samples.medication_relationship_example:main"
-run-langextract-dataset = "langextract_samples.runner:main"
+run-langextract-example = "langextract_samples.examples_cli:romeo_main"
+run-medication-ner-example = "langextract_samples.examples_cli:medication_ner_main"
+run-medication-relationship-example = "langextract_samples.examples_cli:medication_relationship_main"
+run-langextract-dataset = "langextract_samples.examples_cli:main"

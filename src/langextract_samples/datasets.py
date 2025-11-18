@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
-from typing import Callable, Dict, Iterable, List, Optional
-import textwrap
+from importlib import resources
+from typing import Any, Callable, Dict, Iterable, List, Optional
 
 import langextract as lx
 
@@ -12,6 +13,7 @@ import langextract as lx
 AnnotatedDocument = lx.data.AnnotatedDocument
 ExampleBuilder = Callable[[], List[lx.data.ExampleData]]
 SummaryFn = Callable[[AnnotatedDocument, str], None]
+ExamplesConfig = List[Dict[str, Any]]
 
 
 @dataclass(frozen=True)
@@ -49,9 +51,7 @@ def _basic_summary(result: AnnotatedDocument, input_text: str) -> None:
         )
 
 
-def _relationship_summary(
-    result: AnnotatedDocument, input_text: str
-) -> None:
+def _relationship_summary(result: AnnotatedDocument, input_text: str) -> None:
     """Specialized summary that groups medication attributes."""
     print(f"Input text: {input_text.strip()}\n")
     print("Extracted medications:")
@@ -72,173 +72,89 @@ def _relationship_summary(
             )
 
 
-def _build_romeo_examples() -> List[lx.data.ExampleData]:
-    return [
-        lx.data.ExampleData(
-            text=(
-                "ROMEO. But soft! What light through yonder window breaks? "
-                "It is the east, and Juliet is the sun."
-            ),
-            extractions=[
-                lx.data.Extraction(
-                    extraction_class="character",
-                    extraction_text="ROMEO",
-                    attributes={"emotional_state": "wonder"},
-                ),
-                lx.data.Extraction(
-                    extraction_class="emotion",
-                    extraction_text="But soft!",
-                    attributes={"feeling": "gentle awe"},
-                ),
-                lx.data.Extraction(
-                    extraction_class="relationship",
-                    extraction_text="Juliet is the sun",
-                    attributes={"type": "metaphor"},
-                ),
-            ],
-        )
-    ]
-
-
-def _build_medication_ner_examples() -> List[lx.data.ExampleData]:
-    return [
-        lx.data.ExampleData(
-            text="Patient was given 250 mg IV Cefazolin TID for one week.",
-            extractions=[
-                lx.data.Extraction(extraction_class="dosage", extraction_text="250 mg"),
-                lx.data.Extraction(extraction_class="route", extraction_text="IV"),
-                lx.data.Extraction(
-                    extraction_class="medication", extraction_text="Cefazolin"
-                ),
-                lx.data.Extraction(
-                    extraction_class="frequency", extraction_text="TID"
-                ),
-                lx.data.Extraction(
-                    extraction_class="duration", extraction_text="for one week"
-                ),
-            ],
-        )
-    ]
-
-
-def _build_medication_relationship_examples() -> List[lx.data.ExampleData]:
-    return [
-        lx.data.ExampleData(
-            text=(
-                "Patient takes Aspirin 100mg daily for heart health and "
-                "Simvastatin 20mg at bedtime."
-            ),
-            extractions=[
-                lx.data.Extraction(
-                    extraction_class="medication",
-                    extraction_text="Aspirin",
-                    attributes={"medication_group": "Aspirin"},
-                ),
-                lx.data.Extraction(
-                    extraction_class="dosage",
-                    extraction_text="100mg",
-                    attributes={"medication_group": "Aspirin"},
-                ),
-                lx.data.Extraction(
-                    extraction_class="frequency",
-                    extraction_text="daily",
-                    attributes={"medication_group": "Aspirin"},
-                ),
-                lx.data.Extraction(
-                    extraction_class="condition",
-                    extraction_text="heart health",
-                    attributes={"medication_group": "Aspirin"},
-                ),
-                lx.data.Extraction(
-                    extraction_class="medication",
-                    extraction_text="Simvastatin",
-                    attributes={"medication_group": "Simvastatin"},
-                ),
-                lx.data.Extraction(
-                    extraction_class="dosage",
-                    extraction_text="20mg",
-                    attributes={"medication_group": "Simvastatin"},
-                ),
-                lx.data.Extraction(
-                    extraction_class="frequency",
-                    extraction_text="at bedtime",
-                    attributes={"medication_group": "Simvastatin"},
-                ),
-            ],
-        )
-    ]
-
-
-ROMEO_PROMPT = textwrap.dedent(
-    """\
-    Extract characters, emotions, and relationships in order of appearance.
-    Use exact text for extractions. Do not paraphrase or overlap entities.
-    Provide meaningful attributes for each entity to add context."""
-)
-
-DEFAULT_REL_INPUT = textwrap.dedent(
-    """\
-    The patient was prescribed Lisinopril and Metformin last month.
-    He takes the Lisinopril 10mg daily for hypertension, but often misses
-    his Metformin 500mg dose which should be taken twice daily for diabetes.
-    """
-)
-
-
-DATASETS: Dict[str, DatasetConfig] = {
-    "romeo_quickstart": DatasetConfig(
-        key="romeo_quickstart",
-        title="Romeo & Juliet Quick Start",
-        description="Characters, emotions, and relationships using the README example.",
-        prompt_description=ROMEO_PROMPT,
-        default_input_text=(
-            "Lady Juliet gazed longingly at the stars, her heart aching for Romeo."
-        ),
-        default_model_id="gemini-2.5-flash-lite",
-        artifact_prefix="romeo_juliet_basic",
-        build_examples=_build_romeo_examples,
-        summary_fn=_basic_summary,
-    ),
-    "medication_ner": DatasetConfig(
-        key="medication_ner",
-        title="Medication Named Entity Recognition",
-        description=(
-            "Extract medication name, dosage, route, frequency, and duration "
-            "from simple sentences."
-        ),
-        prompt_description=(
-            "Extract medication information including medication name, dosage, "
-            "route, frequency, and duration in the order they appear in the text."
-        ),
-        default_input_text="Patient took 400 mg PO Ibuprofen q4h for two days.",
-        default_model_id="gemini-2.5-pro",
-        artifact_prefix="medication_ner",
-        build_examples=_build_medication_ner_examples,
-        summary_fn=_basic_summary,
-    ),
-    "medication_relationship": DatasetConfig(
-        key="medication_relationship",
-        title="Medication Relationship Extraction",
-        description=(
-            "Group medication details using medication_group attributes to link "
-            "dosage, frequency, and indications."
-        ),
-        prompt_description=textwrap.dedent(
-            """\
-            Extract medications with their details, using attributes to group related information:
-
-            1. Extract entities in the order they appear in the text
-            2. Each entity must have a 'medication_group' attribute linking it to its medication
-            3. All details about a medication should share the same medication_group value
-            """
-        ),
-        default_input_text=DEFAULT_REL_INPUT,
-        default_model_id="gemini-2.5-pro",
-        artifact_prefix="medication_relationship",
-        build_examples=_build_medication_relationship_examples,
-        summary_fn=_relationship_summary,
-    ),
+SUMMARY_HANDLERS: Dict[str, SummaryFn] = {
+    "basic": _basic_summary,
+    "relationship": _relationship_summary,
 }
+
+
+def _build_examples_from_config(
+    examples_config: ExamplesConfig,
+) -> List[lx.data.ExampleData]:
+    """Converts raw JSON config into ExampleData objects."""
+    examples: List[lx.data.ExampleData] = []
+    for example in examples_config:
+        extractions = [
+            lx.data.Extraction(
+                extraction_class=extraction["extraction_class"],
+                extraction_text=extraction["extraction_text"],
+                attributes=extraction.get("attributes"),
+            )
+            for extraction in example.get("extractions", [])
+        ]
+        examples.append(
+            lx.data.ExampleData(
+                text=example["text"],
+                extractions=extractions,
+            )
+        )
+    return examples
+
+
+def _load_dataset_entries() -> List[Dict[str, Any]]:
+    """Loads dataset definitions from the bundled JSON file."""
+    data_path = resources.files(__package__) / "datasets.json"
+    with data_path.open(encoding="utf-8") as f:
+        return json.load(f)
+
+
+def _make_example_builder(
+    examples_config: ExamplesConfig,
+) -> ExampleBuilder:
+    def builder() -> List[lx.data.ExampleData]:
+        return _build_examples_from_config(examples_config)
+
+    return builder
+
+
+def _create_dataset_config(entry: Dict[str, Any]) -> DatasetConfig:
+    """Creates a DatasetConfig from a JSON dictionary."""
+    key = entry["key"]
+    summary_type = entry.get("summary_type", "basic")
+    if summary_type:
+        if summary_type not in SUMMARY_HANDLERS:
+            raise KeyError(
+                f"Unknown summary_type '{summary_type}' for dataset {key}"
+            )
+        summary_fn = SUMMARY_HANDLERS[summary_type]
+    else:
+        summary_fn = None
+    examples_config = entry.get("examples", [])
+    if not isinstance(examples_config, list):
+        raise TypeError(f"'examples' for dataset {key} must be a list")
+    return DatasetConfig(
+        key=key,
+        title=entry["title"],
+        description=entry["description"],
+        prompt_description=entry["prompt_description"],
+        default_input_text=entry["default_input_text"],
+        default_model_id=entry["default_model_id"],
+        artifact_prefix=entry["artifact_prefix"],
+        build_examples=_make_example_builder(examples_config),
+        summary_fn=summary_fn,
+    )
+
+
+def _load_datasets() -> Dict[str, DatasetConfig]:
+    entries = _load_dataset_entries()
+    datasets_map: Dict[str, DatasetConfig] = {}
+    for entry in entries:
+        config = _create_dataset_config(entry)
+        datasets_map[config.key] = config
+    return datasets_map
+
+
+DATASETS: Dict[str, DatasetConfig] = _load_datasets()
 
 
 def get_dataset(key: str) -> DatasetConfig:

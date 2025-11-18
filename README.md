@@ -60,7 +60,7 @@ run-langextract-dataset --dataset romeo_quickstart --model-id gemini-2.5-flash
 
 ### Romeo & Juliet Quick Start
 
-`src/langextract_samples/romeo_example.py` は README に記載の
+`src/langextract_samples/examples_cli.py` の `romeo_main` エントリポイントは README に記載の
 Quick Start 例（人物・感情・関係の抽出）をそのまま実行します:
 
 ```bash
@@ -94,7 +94,7 @@ Open the resulting HTML file (e.g.
 
 ### Medication Named Entity Recognition
 
-`src/langextract_samples/medication_ner_example.py` は
+`src/langextract_samples/examples_cli.py` の `medication_ner_main` は
 [`docs/examples/medication_examples.md`](https://github.com/google/langextract/blob/main/docs/examples/medication_examples.md)
 の NER 例を単体で再現します:
 
@@ -107,7 +107,7 @@ run-langextract-dataset --dataset medication_ner --model-id gemini-2.5-pro
 ### Medication Relationship Extraction
 
 投与情報を `medication_group` で紐付けする例は
-`src/langextract_samples/medication_relationship_example.py` に分離しています:
+`src/langextract_samples/examples_cli.py` の `medication_relationship_main` に分岐しています:
 
 ```bash
 run-medication-relationship-example --model-id gemini-2.5-pro
@@ -120,16 +120,31 @@ run-langextract-dataset --dataset medication_relationship --model-id gemini-2.5-
 
 ## Next Steps
 
-### 新しいデータセットの追加
+### データセット定義ファイル
 
-1. `src/langextract_samples/datasets.py` に `DatasetConfig` を追加する。
-   - `key`, `title`, `description`, `prompt_description`,
-     `default_input_text`, `default_model_id`,
-     `artifact_prefix`, `build_examples`（few-shot 定義）、
-     必要に応じて `summary_fn` を指定。
-2. 既存 CLI (`run-langextract-dataset`) ですぐ実行できる。
-   必要であれば `pyproject.toml` の `[project.scripts]` に専用エントリポイントを
-   追加して、特定データセット用のコマンドを増やせる。
+すべてのシナリオは `src/langextract_samples/datasets.json` に記述されています。
+JSON 形式なので、Python コードを触らずに差し替え・追加が可能です。
 
-これにより、複数パラメータのベンチマークを共通のフレームワークで管理でき、
-データセットを差し替えて比較しやすくなります。
+各エントリの主なフィールド:
+
+- `key`: CLI で指定する識別子（例: `romeo_quickstart`）
+- `title` / `description`: `--list-datasets` の表示用メタデータ
+- `prompt_description`: LangExtract に渡す抽出指示
+- `default_input_text`: 標準入力テキスト
+- `default_model_id`: 想定モデル ID
+- `artifact_prefix`: JSONL/HTML のデフォルトファイル名
+- `summary_type`: `basic`（一覧表示）か `relationship`
+- `examples`: few-shot 例 (`text` と `extractions` の配列)
+
+`extractions` の要素は `extraction_class`・`extraction_text`・
+必要に応じて `attributes` を指定します。`summary_type` を追加したい場合は
+`datasets.py` の `SUMMARY_HANDLERS` に対応関数を定義してください。
+
+### 新しいデータセットの追加手順
+
+1. `datasets.json` に新しいオブジェクトを追加する。
+2. 既存 CLI (`run-langextract-dataset`) で `--dataset 新キー` を実行する。
+   必要なら `pyproject.toml` の `[project.scripts]` に専用エントリポイントを追加。
+
+これで複数パラメータのベンチマークを共通フレームワークで管理しつつ、
+データセットを JSON で差し替えて比較できます。

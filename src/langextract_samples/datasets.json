@@ -1,0 +1,143 @@
+[
+  {
+    "key": "romeo_quickstart",
+    "title": "Romeo & Juliet Quick Start",
+    "description": "Characters, emotions, and relationships using the README example.",
+    "prompt_description": "Extract characters, emotions, and relationships in order of appearance.\nUse exact text for extractions. Do not paraphrase or overlap entities.\nProvide meaningful attributes for each entity to add context.",
+    "default_input_text": "Lady Juliet gazed longingly at the stars, her heart aching for Romeo.",
+    "default_model_id": "gemini-2.5-flash",
+    "artifact_prefix": "romeo_juliet_basic",
+    "summary_type": "basic",
+    "examples": [
+      {
+        "text": "ROMEO. But soft! What light through yonder window breaks? It is the east, and Juliet is the sun.",
+        "extractions": [
+          {
+            "extraction_class": "character",
+            "extraction_text": "ROMEO",
+            "attributes": {
+              "emotional_state": "wonder"
+            }
+          },
+          {
+            "extraction_class": "emotion",
+            "extraction_text": "But soft!",
+            "attributes": {
+              "feeling": "gentle awe"
+            }
+          },
+          {
+            "extraction_class": "relationship",
+            "extraction_text": "Juliet is the sun",
+            "attributes": {
+              "type": "metaphor"
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "medication_ner",
+    "title": "Medication Named Entity Recognition",
+    "description": "Extract medication name, dosage, route, frequency, and duration from simple sentences.",
+    "prompt_description": "Extract medication information including medication name, dosage, route, frequency, and duration in the order they appear in the text.",
+    "default_input_text": "Patient took 400 mg PO Ibuprofen q4h for two days.",
+    "default_model_id": "gemini-2.5-pro",
+    "artifact_prefix": "medication_ner",
+    "summary_type": "basic",
+    "examples": [
+      {
+        "text": "Patient was given 250 mg IV Cefazolin TID for one week.",
+        "extractions": [
+          {
+            "extraction_class": "dosage",
+            "extraction_text": "250 mg"
+          },
+          {
+            "extraction_class": "route",
+            "extraction_text": "IV"
+          },
+          {
+            "extraction_class": "medication",
+            "extraction_text": "Cefazolin"
+          },
+          {
+            "extraction_class": "frequency",
+            "extraction_text": "TID"
+          },
+          {
+            "extraction_class": "duration",
+            "extraction_text": "for one week"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "key": "medication_relationship",
+    "title": "Medication Relationship Extraction",
+    "description": "Group medication details using medication_group attributes to link dosage, frequency, and indications.",
+    "prompt_description": "Extract medications with their details, using attributes to group related information:\n\n1. Extract entities in the order they appear in the text\n2. Each entity must have a 'medication_group' attribute linking it to its medication\n3. All details about a medication should share the same medication_group value",
+    "default_input_text": "The patient was prescribed Lisinopril and Metformin last month.\nHe takes the Lisinopril 10mg daily for hypertension, but often misses\nhis Metformin 500mg dose which should be taken twice daily for diabetes.",
+    "default_model_id": "gemini-2.5-pro",
+    "artifact_prefix": "medication_relationship",
+    "summary_type": "relationship",
+    "examples": [
+      {
+        "text": "Patient takes Aspirin 100mg daily for heart health and Simvastatin 20mg at bedtime.",
+        "extractions": [
+          {
+            "extraction_class": "medication",
+            "extraction_text": "Aspirin",
+            "attributes": {
+              "medication_group": "Aspirin"
+            }
+          },
+          {
+            "extraction_class": "dosage",
+            "extraction_text": "100mg",
+            "attributes": {
+              "medication_group": "Aspirin"
+            }
+          },
+          {
+            "extraction_class": "frequency",
+            "extraction_text": "daily",
+            "attributes": {
+              "medication_group": "Aspirin"
+            }
+          },
+          {
+            "extraction_class": "condition",
+            "extraction_text": "heart health",
+            "attributes": {
+              "medication_group": "Aspirin"
+            }
+          },
+          {
+            "extraction_class": "medication",
+            "extraction_text": "Simvastatin",
+            "attributes": {
+              "medication_group": "Simvastatin"
+            }
+          },
+          {
+            "extraction_class": "dosage",
+            "extraction_text": "20mg",
+            "attributes": {
+              "medication_group": "Simvastatin"
+            }
+          },
+          {
+            "extraction_class": "frequency",
+            "extraction_text": "at bedtime",
+            "attributes": {
+              "medication_group": "Simvastatin"
+            }
+          }
+        ]
+      }
+    ]
+  }
+]
