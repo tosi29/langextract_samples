@@ -10,6 +10,12 @@
     .error { color: #b00020; }
     a { color: #0b57d0; }
     header { margin-bottom: 1.5rem; }
+    table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
+    th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; vertical-align: top; }
+    th { background: #f5f5f5; }
+    caption { text-align: left; font-weight: bold; margin-bottom: 0.5rem; }
+    tbody tr:nth-child(even) { background: #fafafa; }
+    td div { margin: 0.15rem 0; }
   </style>
 </head>
 <body>
@@ -28,30 +34,109 @@
       const contentEl = document.getElementById("content");
 
       const renderEntries = (text) => {
-      if (!text || !text.trim()) {
-        contentEl.innerHTML = "<p>No data in this JSONL file.</p>";
-        return;
-      }
-      const entries = text.trim().split(/\n+/);
-      contentEl.innerHTML = "";
-      entries.forEach((line, idx) => {
-        const entry = document.createElement("div");
-        entry.className = "entry";
-        const header = document.createElement("strong");
-        header.textContent = "Entry " + (idx + 1);
-        const pre = document.createElement("pre");
-        try {
-          const parsed = JSON.parse(line);
-          pre.textContent = JSON.stringify(parsed, null, 2);
-        } catch (err) {
-          pre.textContent = line;
-          pre.classList.add("error");
+        if (!text || !text.trim()) {
+          contentEl.innerHTML = "<p>No data in this JSONL file.</p>";
+          return;
         }
-        entry.appendChild(header);
-        entry.appendChild(pre);
-        contentEl.appendChild(entry);
-      });
-    };
+        const lines = text.trim().split(/\n+/);
+        const parsedDocs = [];
+        const listContainer = document.createElement("div");
+        lines.forEach((line, idx) => {
+          const entry = document.createElement("div");
+          entry.className = "entry";
+          const header = document.createElement("strong");
+          header.textContent = "Entry " + (idx + 1);
+          const pre = document.createElement("pre");
+          try {
+            const parsed = JSON.parse(line);
+            parsedDocs.push(parsed);
+            pre.textContent = JSON.stringify(parsed, null, 2);
+          } catch (err) {
+            pre.textContent = line;
+            pre.classList.add("error");
+          }
+          entry.appendChild(header);
+          entry.appendChild(pre);
+          listContainer.appendChild(entry);
+        });
+
+        const table = buildExtractionTable(parsedDocs);
+        contentEl.innerHTML = "";
+        if (table) {
+          contentEl.appendChild(table);
+        }
+        contentEl.appendChild(listContainer);
+      };
+
+      const buildExtractionTable = (documents) => {
+        const rows = [];
+        documents.forEach((doc, docIndex) => {
+          const extractions = Array.isArray(doc.extractions)
+            ? doc.extractions
+            : [];
+          extractions.forEach((extraction, extractionIndex) => {
+            rows.push({
+              idx: extractionIndex + 1,
+              cls: extraction.extraction_class || "-",
+              text: extraction.extraction_text || "-",
+              attributes: formatAttributes(extraction.attributes),
+            });
+          });
+        });
+        if (!rows.length) {
+          return null;
+        }
+        const table = document.createElement("table");
+        table.innerHTML = `
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Extraction Class</th>
+              <th>Extraction Text</th>
+              <th>Attributes</th>
+            </tr>
+          </thead>
+        `;
+        const tbody = document.createElement("tbody");
+        rows.forEach((row) => {
+          const tr = document.createElement("tr");
+          tr.innerHTML = `
+            <td>${row.idx}</td>
+            <td>${escapeHtml(row.cls)}</td>
+            <td>${escapeHtml(row.text)}</td>
+            <td>${row.attributes}</td>
+          `;
+          tbody.appendChild(tr);
+        });
+        table.prepend(document.createElement("caption"));
+        table.caption.textContent = "Structured Extractions";
+        table.appendChild(tbody);
+        return table;
+      };
+
+      const escapeHtml = (value) => {
+        const span = document.createElement("span");
+        span.textContent = value ?? "";
+        return span.innerHTML || " ";
+      };
+
+      const formatAttributes = (attributes) => {
+        if (!attributes || typeof attributes !== "object") {
+          return "-";
+        }
+        const entries = Object.entries(attributes);
+        if (!entries.length) {
+          return "-";
+        }
+        return entries
+          .map(
+            ([key, value]) =>
+              `<div><strong>${escapeHtml(key)}:</strong> ${escapeHtml(
+                String(value)
+              )}</div>`
+          )
+          .join("");
+      };
 
       const showError = (message) => {
       contentEl.innerHTML = "<p class='error'>" + message + "</p>";

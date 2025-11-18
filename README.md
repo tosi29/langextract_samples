@@ -97,6 +97,8 @@ CLI 実行後は `docs/index.html` が自動生成・更新されるので、ブ
 JSONL / HTML の一覧テーブルを確認できます。JSONL のリンクは内蔵ビューワ
 （`docs/jsonl_viewer.html`）に遷移します。リンクには JSONL の中身が Base64 で
 埋め込まれるため、`file://` で開いた場合でもブラウザだけで確認できます。
+ビューワでは JSONL の詳細表示に加えて、`extraction_class` / `extraction_text` /
+`attributes` をまとめたテーブルも先頭に表示します。
 
 ### Medication Named Entity Recognition
 
