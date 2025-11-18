@@ -35,7 +35,6 @@ def run_dataset(
     model_id: str,
     input_text: str,
     output_dir: Path,
-    artifact_prefix: str,
 ) -> tuple[Path, Path]:
     """Executes a dataset and writes artifacts."""
     config = datasets.get_dataset(dataset_key)
@@ -49,7 +48,7 @@ def run_dataset(
         config.summary_fn(result, input_text)
     else:
         print(f"Processed dataset '{dataset_key}'.")
-    return save_artifacts(result, output_dir, artifact_prefix)
+    return save_artifacts(result, output_dir, dataset_key)
 
 
 def _comma_join(items: Iterable[str]) -> str:
@@ -111,10 +110,6 @@ def run_cli(
         help="Directory for JSONL + HTML artifacts (default: ./outputs).",
     )
     parser.add_argument(
-        "--artifact-prefix",
-        help="Filename prefix for generated artifacts.",
-    )
-    parser.add_argument(
         "--list-datasets",
         action="store_true",
         help="Print available dataset keys and exit.",
@@ -149,14 +144,10 @@ def run_cli(
         input_text_override = args.input_text
 
     multiple = len(dataset_keys) > 1
-    artifact_prefix_override = args.artifact_prefix
     for dataset_key in dataset_keys:
         config = datasets.get_dataset(dataset_key)
         model_id = args.model_id or config.default_model_id
         input_text = input_text_override or config.default_input_text
-        artifact_prefix = artifact_prefix_override or config.artifact_prefix
-        if artifact_prefix_override and multiple:
-            artifact_prefix = f"{artifact_prefix_override}_{dataset_key}"
 
         print(f"\n=== Running dataset: {dataset_key} ===")
         jsonl_path, html_path = run_dataset(
@@ -164,7 +155,6 @@ def run_cli(
             model_id=model_id,
             input_text=input_text,
             output_dir=args.output_dir,
-            artifact_prefix=artifact_prefix,
         )
         prefix = f"[{dataset_key}] " if multiple else ""
         print(f"\n{prefix}Saved structured output to: {jsonl_path}")

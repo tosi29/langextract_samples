@@ -60,7 +60,6 @@ run-langextract-dataset
 - `--model-id`: LangExtract に渡すモデル ID（デフォルトは各データセットで定義）。
 - `--input-text` / `--input-file`: デフォルトの入力テキストを上書き。
 - `--output-dir`: 出力フォルダ（既定 `./outputs`）。
-- `--artifact-prefix`: JSONL / HTML のファイル名プレフィックス。
 
 ## データセット別の実行例
 
@@ -72,8 +71,7 @@ README に記載の Quick Start 例（人物・感情・関係の抽出）は `r
 ```bash
 run-langextract-dataset romeo_quickstart \
   --model-id gemini-2.5-flash \
-  --output-dir outputs \
-  --artifact-prefix romeo_sample
+  --output-dir outputs
 ```
 
 Key options:
@@ -84,8 +82,6 @@ Key options:
 - `--input-file`: Provide a text file to extract from; takes precedence over
   `--input-text`.
 - `--output-dir`: Destination directory (defaults to `./outputs`).
-- `--artifact-prefix`: File prefix for both the `.jsonl` and `.html`
-  artifacts.
 
 The script:
 
@@ -134,13 +130,13 @@ JSON 形式なので、Python コードを触らずに差し替え・追加が�
 - `prompt_description`: LangExtract に渡す抽出指示
 - `default_input_text`: 標準入力テキスト
 - `default_model_id`: 想定モデル ID
-- `artifact_prefix`: JSONL/HTML のデフォルトファイル名
 - `summary_type`: `basic`（一覧表示）か `relationship`
 - `examples`: few-shot 例 (`text` と `extractions` の配列)
 
 `extractions` の要素は `extraction_class`・`extraction_text`・
 必要に応じて `attributes` を指定します。`summary_type` を追加したい場合は
 `datasets.py` の `SUMMARY_HANDLERS` に対応関数を定義してください。
+JSONL / HTML の出力ファイル名はデータセットキー（= JSON ファイル名）がプレフィックスになります。
 
 ### 新しいデータセットの追加手順
 
