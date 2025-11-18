@@ -18,25 +18,8 @@ def _run_for_dataset(dataset_key: Optional[str] = None) -> None:
 
 
 def main() -> None:
-    """Generic entry point that allows choosing any dataset."""
+    """Single entry point that allows choosing any dataset."""
     _run_for_dataset(None)
 
 
-def romeo_main() -> None:
-    _run_for_dataset("romeo_quickstart")
-
-
-def medication_ner_main() -> None:
-    _run_for_dataset("medication_ner")
-
-
-def medication_relationship_main() -> None:
-    _run_for_dataset("medication_relationship")
-
-
-__all__ = [
-    "main",
-    "romeo_main",
-    "medication_ner_main",
-    "medication_relationship_main",
-]
+__all__ = ["main"]

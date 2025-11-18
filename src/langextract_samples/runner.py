@@ -77,12 +77,19 @@ def run_cli(
         description="Run a predefined LangExtract dataset scenario."
     )
     needs_dataset_arg = len(available) > 1
+    dataset_positional_name: Optional[str] = None
     if needs_dataset_arg:
+        parser.add_argument(
+            "dataset_key",
+            nargs="?",
+            choices=available,
+            help="Dataset key to run. If omitted, runs all available datasets.",
+        )
+        dataset_positional_name = "dataset_key"
         parser.add_argument(
             "--dataset",
             choices=available,
-            default=default_dataset_key,
-            help="Dataset key to run.",
+            help="Dataset key to run (same as positional argument).",
         )
     parser.add_argument(
         "--model-id",
@@ -120,25 +127,49 @@ def run_cli(
             print(f"{key}: {config.title}")
         return
 
-    dataset_key = args.dataset if needs_dataset_arg else available[0]
-    config = datasets.get_dataset(dataset_key)
-
-    model_id = args.model_id or config.default_model_id
-    input_text = args.input_text or config.default_input_text
-    if args.input_file:
-        input_text = args.input_file.read_text(encoding="utf-8")
-    artifact_prefix = args.artifact_prefix or config.artifact_prefix
-
-    jsonl_path, html_path = run_dataset(
-        dataset_key=dataset_key,
-        model_id=model_id,
-        input_text=input_text,
-        output_dir=args.output_dir,
-        artifact_prefix=artifact_prefix,
+    selected_dataset: Optional[str] = None
+    if needs_dataset_arg:
+        positional_value = getattr(args, dataset_positional_name)
+        if args.dataset and positional_value and args.dataset != positional_value:
+            parser.error(
+                f"--dataset ({args.dataset}) and positional dataset argument "
+                f"({positional_value}) must match."
+            )
+        selected_dataset = args.dataset or positional_value
+    dataset_keys = (
+        [selected_dataset]
+        if selected_dataset
+        else list(available if needs_dataset_arg else available)
     )
-    print(f"\nSaved structured output to: {jsonl_path}")
-    print(f"Saved visualization to:     {html_path}")
-    print("Open the HTML file in a browser to review highlighted spans.")
+
+    input_text_override: Optional[str] = None
+    if args.input_file:
+        input_text_override = args.input_file.read_text(encoding="utf-8")
+    elif args.input_text:
+        input_text_override = args.input_text
+
+    multiple = len(dataset_keys) > 1
+    artifact_prefix_override = args.artifact_prefix
+    for dataset_key in dataset_keys:
+        config = datasets.get_dataset(dataset_key)
+        model_id = args.model_id or config.default_model_id
+        input_text = input_text_override or config.default_input_text
+        artifact_prefix = artifact_prefix_override or config.artifact_prefix
+        if artifact_prefix_override and multiple:
+            artifact_prefix = f"{artifact_prefix_override}_{dataset_key}"
+
+        print(f"\n=== Running dataset: {dataset_key} ===")
+        jsonl_path, html_path = run_dataset(
+            dataset_key=dataset_key,
+            model_id=model_id,
+            input_text=input_text,
+            output_dir=args.output_dir,
+            artifact_prefix=artifact_prefix,
+        )
+        prefix = f"[{dataset_key}] " if multiple else ""
+        print(f"\n{prefix}Saved structured output to: {jsonl_path}")
+        print(f"{prefix}Saved visualization to:     {html_path}")
+        print(f"{prefix}Open the HTML file in a browser to review highlighted spans.")
 
 
 def main() -> None:

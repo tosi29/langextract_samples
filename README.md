@@ -30,7 +30,7 @@ pip install -e .
 ```
 
 This pulls LangExtract from PyPI and registers the CLI entry point
-`run-langextract-example`.
+`run-langextract-dataset`.
 
 ## 共通ランナーとデータセット
 
@@ -45,12 +45,18 @@ run-langextract-dataset --list-datasets
 任意のデータセットを直接指定することも可能です:
 
 ```bash
-run-langextract-dataset --dataset romeo_quickstart --model-id gemini-2.5-flash
+run-langextract-dataset romeo_quickstart --model-id gemini-2.5-flash
+```
+
+データセット引数を省略すると、登録済みの全データセットを順番に実行します:
+
+```bash
+run-langextract-dataset
 ```
 
 共通オプション:
 
-- `--dataset`: 実行するデータセットキー。
+- `dataset` / `--dataset`: 実行するデータセットキー。
 - `--model-id`: LangExtract に渡すモデル ID（デフォルトは各データセットで定義）。
 - `--input-text` / `--input-file`: デフォルトの入力テキストを上書き。
 - `--output-dir`: 出力フォルダ（既定 `./outputs`）。
@@ -60,11 +66,11 @@ run-langextract-dataset --dataset romeo_quickstart --model-id gemini-2.5-flash
 
 ### Romeo & Juliet Quick Start
 
-`src/langextract_samples/examples_cli.py` の `romeo_main` エントリポイントは README に記載の
-Quick Start 例（人物・感情・関係の抽出）をそのまま実行します:
+README に記載の Quick Start 例（人物・感情・関係の抽出）は `romeo_quickstart`
+データセットで再現できます:
 
 ```bash
-run-langextract-example \
+run-langextract-dataset romeo_quickstart \
   --model-id gemini-2.5-flash \
   --output-dir outputs \
   --artifact-prefix romeo_sample
@@ -94,25 +100,20 @@ Open the resulting HTML file (e.g.
 
 ### Medication Named Entity Recognition
 
-`src/langextract_samples/examples_cli.py` の `medication_ner_main` は
 [`docs/examples/medication_examples.md`](https://github.com/google/langextract/blob/main/docs/examples/medication_examples.md)
-の NER 例を単体で再現します:
+の NER 例は `medication_ner` データセットで単体実行できます:
 
 ```bash
-run-medication-ner-example --model-id gemini-2.5-pro
-# または
-run-langextract-dataset --dataset medication_ner --model-id gemini-2.5-pro
+run-langextract-dataset medication_ner --model-id gemini-2.5-pro
 ```
 
 ### Medication Relationship Extraction
 
-投与情報を `medication_group` で紐付けする例は
-`src/langextract_samples/examples_cli.py` の `medication_relationship_main` に分岐しています:
+投与情報を `medication_group` で紐付けする例は `medication_relationship`
+データセットで実行できます:
 
 ```bash
-run-medication-relationship-example --model-id gemini-2.5-pro
-# または
-run-langextract-dataset --dataset medication_relationship --model-id gemini-2.5-pro
+run-langextract-dataset medication_relationship --model-id gemini-2.5-pro
 ```
 
 どちらのデータセットも CLI から入力テキストや出力先を差し替えられるため、
@@ -144,7 +145,7 @@ JSON 形式なので、Python コードを触らずに差し替え・追加が�
 ### 新しいデータセットの追加手順
 
 1. `dataset/` に `<key>.json` を追加する。
-2. 既存 CLI (`run-langextract-dataset`) で `--dataset 新キー` を実行する。
+2. 既存 CLI (`run-langextract-dataset`) で `新キー` を引数に実行する。
    必要なら `pyproject.toml` の `[project.scripts]` に専用エントリポイントを追加。
 
 これで複数パラメータのベンチマークを共通フレームワークで管理しつつ、

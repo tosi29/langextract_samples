@@ -23,7 +23,4 @@ include = [
 ]
 
 [project.scripts]
-run-langextract-example = "langextract_samples.examples_cli:romeo_main"
-run-medication-ner-example = "langextract_samples.examples_cli:medication_ner_main"
-run-medication-relationship-example = "langextract_samples.examples_cli:medication_relationship_main"
 run-langextract-dataset = "langextract_samples.examples_cli:main"
