@@ -27,6 +27,7 @@ class DatasetConfig:
     prompt_description: str
     default_input_text: str
     default_model_id: str
+    extraction_passes: int
     build_examples: ExampleBuilder
     summary_fn: Optional[SummaryFn] = None
 
@@ -210,6 +211,7 @@ def _create_dataset_config(entry: Dict[str, Any]) -> DatasetConfig:
         prompt_description=entry["prompt_description"],
         default_input_text=entry["default_input_text"],
         default_model_id=entry["default_model_id"],
+        extraction_passes=int(entry.get("extraction_passes", 1)),
         build_examples=_make_example_builder(examples_config),
         summary_fn=summary_fn,
     )

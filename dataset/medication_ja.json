@@ -4,6 +4,7 @@
   "prompt_description": "文章に登場する薬剤名、用量、投与経路、服用頻度、服用期間を出現順に抽出してください。",
   "default_input_text": "患者はイブプロフェン400mgを経口で4時間ごとに2日間服用した。",
   "default_model_id": "gemini-2.5-flash-lite",
+  "extraction_passes": 1,
   "summary_type": "basic",
   "examples": [
     {

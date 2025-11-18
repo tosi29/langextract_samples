@@ -4,6 +4,7 @@
   "prompt_description": "薬剤とその関連情報を出現順に抽出し、すべてのエンティティに medication_group 属性を付与してください。\n1. 各エンティティの medication_group は対応する薬剤名と一致させる\n2. 同じ薬剤に関する用量・頻度・適応は同じ medication_group を共有させる\n3. 欠落している medication_group がないか確認する",
   "default_input_text": "患者は先月からリシノプリルとメトホルミンを処方されている。リシノプリル10mgは高血圧のために毎日服用するが、メトホルミン500mgは糖尿病用に1日2回飲むべきところをよく飲み忘れる。",
   "default_model_id": "gemini-2.5-flash-lite",
+  "extraction_passes": 1,
   "summary_type": "relationship",
   "examples": [
     {

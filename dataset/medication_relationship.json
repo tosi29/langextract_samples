@@ -4,6 +4,7 @@
   "prompt_description": "Extract medications with their details, using attributes to group related information:\n\n1. Extract entities in the order they appear in the text\n2. Each entity must have a 'medication_group' attribute linking it to its medication\n3. All details about a medication should share the same medication_group value",
   "default_input_text": "The patient was prescribed Lisinopril and Metformin last month.\nHe takes the Lisinopril 10mg daily for hypertension, but often misses\nhis Metformin 500mg dose which should be taken twice daily for diabetes.",
   "default_model_id": "gemini-2.5-flash-lite",
+  "extraction_passes": 1,
   "summary_type": "relationship",
   "examples": [
     {

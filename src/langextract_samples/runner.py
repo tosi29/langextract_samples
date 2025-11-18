@@ -38,6 +38,7 @@ def run_dataset(
     model_id: str,
     input_text: str,
     output_dir: Path,
+    extraction_passes: int,
 ) -> tuple[Path, Path]:
     """Executes a dataset and writes artifacts."""
     config = datasets.get_dataset(dataset_key)
@@ -46,6 +47,7 @@ def run_dataset(
         prompt_description=config.prompt_description,
         examples=config.build_examples(),
         model_id=model_id,
+        extraction_passes=extraction_passes,
     )
     if config.summary_fn:
         config.summary_fn(result, input_text)
@@ -378,6 +380,11 @@ def run_cli(
         help="Directory for JSONL + HTML artifacts (default: ./docs).",
     )
     parser.add_argument(
+        "--extraction-passes",
+        type=int,
+        help="Number of extraction passes to run (default uses dataset setting).",
+    )
+    parser.add_argument(
         "--list-datasets",
         action="store_true",
         help="Print available dataset keys and exit.",
@@ -416,6 +423,7 @@ def run_cli(
         config = datasets.get_dataset(dataset_key)
         model_id = args.model_id or config.default_model_id
         input_text = input_text_override or config.default_input_text
+        extraction_passes = args.extraction_passes or config.extraction_passes
 
         print(f"\n=== Running dataset: {dataset_key} ===")
         jsonl_path, html_path = run_dataset(
@@ -423,6 +431,7 @@ def run_cli(
             model_id=model_id,
             input_text=input_text,
             output_dir=args.output_dir,
+            extraction_passes=extraction_passes,
         )
         prefix = f"[{dataset_key}] " if multiple else ""
         print(f"\n{prefix}Saved structured output to: {jsonl_path}")

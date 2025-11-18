@@ -4,6 +4,7 @@
   "prompt_description": "作品中に現れる登場人物・感情・関係を、出現順に抽出してください。\n抽出テキストは必ず原文をそのまま用い、重複や意訳は避けます。\n各エンティティには状況が伝わる補足属性を付与してください。",
   "default_input_text": "ジュリエットは星空を見上げ、ロミオへの想いに胸を焦がしていた。",
   "default_model_id": "gemini-2.5-flash-lite",
+  "extraction_passes": 1,
   "summary_type": "basic",
   "examples": [
     {

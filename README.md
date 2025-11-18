@@ -60,6 +60,7 @@ run-langextract-dataset
 - `--model-id`: LangExtract に渡すモデル ID（デフォルトは各データセットで定義）。
 - `--input-text` / `--input-file`: デフォルトの入力テキストを上書き。
 - `--output-dir`: 出力フォルダ（既定 `./docs`）。
+- `--extraction-passes`: LangExtract の `extraction_passes` 値を上書き。
 
 ## データセット別の実行例
 
@@ -154,6 +155,7 @@ JSON 形式なので、Python コードを触らずに差し替え・追加が�
 - `prompt_description`: LangExtract に渡す抽出指示
 - `default_input_text`: 標準入力テキスト
 - `default_model_id`: 想定モデル ID
+- `extraction_passes`: LangExtract の `extraction_passes` 引数（省略時は 1）
 - `summary_type`: `basic`（一覧表示）か `relationship`
 - `examples`: few-shot 例 (`text` と `extractions` の配列)
 
