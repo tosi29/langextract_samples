@@ -89,6 +89,8 @@ def _ensure_jsonl_viewer(viewer_path: Path) -> None:
       const inlineData = params.get("data");
       const fileNameEl = document.getElementById("file-name");
       const contentEl = document.getElementById("content");
+      const base64ToBytes = (base64) =>
+        Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
 
       const renderEntries = (text) => {
         if (!text || !text.trim()) {
@@ -207,15 +209,17 @@ def _ensure_jsonl_viewer(viewer_path: Path) -> None:
 
       fileNameEl.textContent = file;
       if (inlineData) {
-      try {
-        renderEntries(atob(inlineData));
-        return;
+        try {
+          renderEntries(
+            new TextDecoder("utf-8").decode(base64ToBytes(inlineData))
+          );
+          return;
       } catch (err) {
         console.error(err);
       }
     }
 
-      fetch(file)
+    fetch(file)
       .then((resp) => {
         if (!resp.ok) throw new Error("Failed to load " + file);
         return resp.text();
