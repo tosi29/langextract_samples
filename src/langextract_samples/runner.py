@@ -285,9 +285,21 @@ def _update_outputs_index(output_dir: Path) -> None:
             entry["html"] = path.name
     index_path = output_dir / "index.html"
     rows = []
-    for dataset in sorted(
-        artifacts.values(), key=lambda item: item["metadata"]["dataset"]
-    ):
+    # Sort by dataset, then model, then pass count.
+    sorted_entries = sorted(
+        artifacts.values(),
+        key=lambda item: (
+            (item["metadata"] or _parse_artifact_metadata(item["dataset"]))["dataset"],
+            (item["metadata"] or _parse_artifact_metadata(item["dataset"]))["model"],
+            int(
+                (item["metadata"] or _parse_artifact_metadata(item["dataset"]))[
+                    "passes"
+                ]
+            ),
+        ),
+    )
+
+    for dataset in sorted_entries:
         meta = dataset["metadata"] or _parse_artifact_metadata(dataset["dataset"])
         jsonl_name = dataset["jsonl"]
         if jsonl_name:
