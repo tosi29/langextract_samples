@@ -101,10 +101,10 @@ JSONL / HTML の一覧テーブルを確認できます。JSONL のリンクは�
 ### Medication Named Entity Recognition
 
 [`docs/examples/medication_examples.md`](https://github.com/google/langextract/blob/main/docs/examples/medication_examples.md)
-の NER 例は `medication_ner` データセットで単体実行できます:
+の NER 例は `medication` データセットで単体実行できます:
 
 ```bash
-run-langextract-dataset medication_ner --model-id gemini-2.5-pro
+run-langextract-dataset medication --model-id gemini-2.5-pro
 ```
 
 ### Medication Relationship Extraction
@@ -118,6 +118,24 @@ run-langextract-dataset medication_relationship --model-id gemini-2.5-pro
 
 どちらのデータセットも CLI から入力テキストや出力先を差し替えられるため、
 シナリオごとに同じ枠組みで比較できます。
+
+### 日本語データセット
+
+英語版と同じスキーマで、日本語テキスト・プロンプトを用意したデータセットも
+登録しています。
+
+- `romeo_quickstart_ja`: ロミオとジュリエットの台詞を日本語に翻訳した抽出課題
+  ```bash
+  run-langextract-dataset romeo_quickstart_ja --model-id gemini-2.5-flash-lite
+  ```
+- `medication_ja`: 日本語文から投薬情報（薬剤名・用量など）を抽出
+  ```bash
+  run-langextract-dataset medication_ja --model-id gemini-2.5-flash-lite
+  ```
+- `medication_relationship_ja`: `medication_group` 属性付きの服薬関係抽出（日本語）
+  ```bash
+  run-langextract-dataset medication_relationship_ja --model-id gemini-2.5-flash-lite
+  ```
 
 ## Next Steps
 

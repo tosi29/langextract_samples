@@ -1,0 +1,64 @@
+{
+  "title": "服薬関係抽出（日本語）",
+  "description": "medication_group 属性で薬剤と関連情報をひも付け、用量や頻度、適応をまとめて抽出します。",
+  "prompt_description": "薬剤とその関連情報を出現順に抽出し、すべてのエンティティに medication_group 属性を付与してください。\n1. 各エンティティの medication_group は対応する薬剤名と一致させる\n2. 同じ薬剤に関する用量・頻度・適応は同じ medication_group を共有させる\n3. 欠落している medication_group がないか確認する",
+  "default_input_text": "患者は先月からリシノプリルとメトホルミンを処方されている。リシノプリル10mgは高血圧のために毎日服用するが、メトホルミン500mgは糖尿病用に1日2回飲むべきところをよく飲み忘れる。",
+  "default_model_id": "gemini-2.5-flash-lite",
+  "summary_type": "relationship",
+  "examples": [
+    {
+      "text": "患者は心臓ケアのためにアスピリン100mgを毎日服用し、夜にはシンバスタチン20mgを飲む。",
+      "extractions": [
+        {
+          "extraction_class": "medication",
+          "extraction_text": "アスピリン",
+          "attributes": {
+            "medication_group": "アスピリン"
+          }
+        },
+        {
+          "extraction_class": "dosage",
+          "extraction_text": "100mg",
+          "attributes": {
+            "medication_group": "アスピリン"
+          }
+        },
+        {
+          "extraction_class": "frequency",
+          "extraction_text": "毎日",
+          "attributes": {
+            "medication_group": "アスピリン"
+          }
+        },
+        {
+          "extraction_class": "condition",
+          "extraction_text": "心臓ケア",
+          "attributes": {
+            "medication_group": "アスピリン"
+          }
+        },
+        {
+          "extraction_class": "medication",
+          "extraction_text": "シンバスタチン",
+          "attributes": {
+            "medication_group": "シンバスタチン"
+          }
+        },
+        {
+          "extraction_class": "dosage",
+          "extraction_text": "20mg",
+          "attributes": {
+            "medication_group": "シンバスタチン"
+          }
+        },
+        {
+          "extraction_class": "frequency",
+          "extraction_text": "夜",
+          "attributes": {
+            "medication_group": "シンバスタチン"
+          }
+        }
+      ]
+    }
+  ]
+}
