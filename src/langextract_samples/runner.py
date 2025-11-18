@@ -3,9 +3,11 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from html import escape
 from pathlib import Path
-from typing import Iterable, Optional, Sequence
+from typing import Dict, Iterable, Optional, Sequence
+from urllib.parse import quote
 
 import langextract as lx
 
@@ -52,12 +54,109 @@ def run_dataset(
     return save_artifacts(result, output_dir, dataset_key)
 
 
+def _ensure_jsonl_viewer(viewer_path: Path) -> None:
+    viewer_html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JSONL Viewer</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1.5rem; }
+    pre { background: #f8f8f8; padding: 1rem; border-radius: 6px; overflow: auto; }
+    .entry { margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; padding: 0.75rem; background: #fff; }
+    .error { color: #b00020; }
+    a { color: #0b57d0; }
+    header { margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>JSONL Viewer</h1>
+    <p>Showing contents of <code id="file-name"></code></p>
+    <p><a href="index.html">Back to outputs index</a></p>
+  </header>
+  <div id="content"></div>
+  <script>
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      const file = params.get("file");
+      const inlineData = params.get("data");
+      const fileNameEl = document.getElementById("file-name");
+      const contentEl = document.getElementById("content");
+
+      const renderEntries = (text) => {
+      if (!text || !text.trim()) {
+        contentEl.innerHTML = "<p>No data in this JSONL file.</p>";
+        return;
+      }
+      const entries = text.trim().split(/\\n+/);
+      contentEl.innerHTML = "";
+      entries.forEach((line, idx) => {
+        const entry = document.createElement("div");
+        entry.className = "entry";
+        const header = document.createElement("strong");
+        header.textContent = "Entry " + (idx + 1);
+        const pre = document.createElement("pre");
+        try {
+          const parsed = JSON.parse(line);
+          pre.textContent = JSON.stringify(parsed, null, 2);
+        } catch (err) {
+          pre.textContent = line;
+          pre.classList.add("error");
+        }
+        entry.appendChild(header);
+        entry.appendChild(pre);
+        contentEl.appendChild(entry);
+      });
+    };
+
+      const showError = (message) => {
+      contentEl.innerHTML = "<p class='error'>" + message + "</p>";
+    };
+
+      if (!file) {
+      fileNameEl.textContent = "(no file selected)";
+      showError("Specify ?file=<jsonl name> to view content.");
+      return;
+    }
+
+      fileNameEl.textContent = file;
+      if (inlineData) {
+      try {
+        renderEntries(atob(inlineData));
+        return;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+      fetch(file)
+      .then((resp) => {
+        if (!resp.ok) throw new Error("Failed to load " + file);
+        return resp.text();
+      })
+      .then(renderEntries)
+      .catch((err) => {
+        showError(err.message + "<br/>Open via docs/index.html for inline preview.");
+      });
+    })();
+  </script>
+</body>
+</html>
+"""
+    viewer_path.write_text(viewer_html, encoding="utf-8")
+
+
 def _update_outputs_index(output_dir: Path) -> None:
     """Regenerates docs/index.html (or chosen dir) with artifact links."""
+    _ensure_jsonl_viewer(output_dir / "jsonl_viewer.html")
     output_dir.mkdir(parents=True, exist_ok=True)
     artifacts = {}
+    jsonl_blobs: Dict[str, str] = {}
     for path in output_dir.iterdir():
         if not path.is_file():
+            continue
+        if path.name in {"index.html", "jsonl_viewer.html"}:
             continue
         suffix = path.suffix.lower()
         if suffix not in {".jsonl", ".html"}:
@@ -69,16 +168,23 @@ def _update_outputs_index(output_dir: Path) -> None:
         )
         if suffix == ".jsonl":
             entry["jsonl"] = path.name
+            jsonl_blobs[prefix] = base64.b64encode(
+                path.read_text(encoding="utf-8").encode("utf-8")
+            ).decode("ascii")
         else:
             entry["html"] = path.name
     index_path = output_dir / "index.html"
     rows = []
     for dataset in sorted(artifacts.values(), key=lambda item: item["dataset"]):
-        jsonl_cell = (
-            f'<a href="{escape(dataset["jsonl"])}">{escape(dataset["jsonl"])}</a>'
-            if dataset["jsonl"]
-            else "-"
-        )
+        jsonl_name = dataset["jsonl"]
+        if jsonl_name:
+            viewer_href = f'jsonl_viewer.html?file={quote(jsonl_name)}'
+            inline_data = jsonl_blobs.get(dataset["dataset"])
+            if inline_data:
+                viewer_href += f"&data={quote(inline_data)}"
+            jsonl_cell = f'<a href="{escape(viewer_href)}">{escape(jsonl_name)}</a>'
+        else:
+            jsonl_cell = "-"
         html_cell = (
             f'<a href="{escape(dataset["html"])}">{escape(dataset["html"])}</a>'
             if dataset["html"]

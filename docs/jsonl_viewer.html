@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>JSONL Viewer</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 1.5rem; }
+    pre { background: #f8f8f8; padding: 1rem; border-radius: 6px; overflow: auto; }
+    .entry { margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 6px; padding: 0.75rem; background: #fff; }
+    .error { color: #b00020; }
+    a { color: #0b57d0; }
+    header { margin-bottom: 1.5rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>JSONL Viewer</h1>
+    <p>Showing contents of <code id="file-name"></code></p>
+    <p><a href="index.html">Back to outputs index</a></p>
+  </header>
+  <div id="content"></div>
+  <script>
+    (() => {
+      const params = new URLSearchParams(window.location.search);
+      const file = params.get("file");
+      const inlineData = params.get("data");
+      const fileNameEl = document.getElementById("file-name");
+      const contentEl = document.getElementById("content");
+
+      const renderEntries = (text) => {
+      if (!text || !text.trim()) {
+        contentEl.innerHTML = "<p>No data in this JSONL file.</p>";
+        return;
+      }
+      const entries = text.trim().split(/\n+/);
+      contentEl.innerHTML = "";
+      entries.forEach((line, idx) => {
+        const entry = document.createElement("div");
+        entry.className = "entry";
+        const header = document.createElement("strong");
+        header.textContent = "Entry " + (idx + 1);
+        const pre = document.createElement("pre");
+        try {
+          const parsed = JSON.parse(line);
+          pre.textContent = JSON.stringify(parsed, null, 2);
+        } catch (err) {
+          pre.textContent = line;
+          pre.classList.add("error");
+        }
+        entry.appendChild(header);
+        entry.appendChild(pre);
+        contentEl.appendChild(entry);
+      });
+    };
+
+      const showError = (message) => {
+      contentEl.innerHTML = "<p class='error'>" + message + "</p>";
+    };
+
+      if (!file) {
+      fileNameEl.textContent = "(no file selected)";
+      showError("Specify ?file=<jsonl name> to view content.");
+      return;
+    }
+
+      fileNameEl.textContent = file;
+      if (inlineData) {
+      try {
+        renderEntries(atob(inlineData));
+        return;
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+      fetch(file)
+      .then((resp) => {
+        if (!resp.ok) throw new Error("Failed to load " + file);
+        return resp.text();
+      })
+      .then(renderEntries)
+      .catch((err) => {
+        showError(err.message + "<br/>Open via docs/index.html for inline preview.");
+      });
+    })();
+  </script>
+</body>
+</html>
