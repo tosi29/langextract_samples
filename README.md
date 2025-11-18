@@ -59,7 +59,7 @@ run-langextract-dataset
 - `dataset` / `--dataset`: 実行するデータセットキー。
 - `--model-id`: LangExtract に渡すモデル ID（デフォルトは各データセットで定義）。
 - `--input-text` / `--input-file`: デフォルトの入力テキストを上書き。
-- `--output-dir`: 出力フォルダ（既定 `./outputs`）。
+- `--output-dir`: 出力フォルダ（既定 `./docs`）。
 
 ## データセット別の実行例
 
@@ -71,7 +71,7 @@ README に記載の Quick Start 例（人物・感情・関係の抽出）は `r
 ```bash
 run-langextract-dataset romeo_quickstart \
   --model-id gemini-2.5-flash \
-  --output-dir outputs
+  --output-dir docs
 ```
 
 Key options:
@@ -81,7 +81,7 @@ Key options:
 - `--input-text`: Override the built-in Romeo & Juliet snippet with inline text.
 - `--input-file`: Provide a text file to extract from; takes precedence over
   `--input-text`.
-- `--output-dir`: Destination directory (defaults to `./outputs`).
+- `--output-dir`: Destination directory (defaults to `./docs`).
 
 The script:
 
@@ -92,8 +92,8 @@ The script:
 4. Generates and saves the interactive HTML visualization.
 
 Open the resulting HTML file (e.g.
-`outputs/romeo_sample.html`) in your browser to verify the highlighted spans.
-CLI 実行後は `outputs/index.html` が自動生成・更新されるので、ブラウザで開くと
+`docs/romeo_sample.html`) in your browser to verify the highlighted spans.
+CLI 実行後は `docs/index.html` が自動生成・更新されるので、ブラウザで開くと
 JSONL / HTML の一覧テーブルを確認できます。
 
 ### Medication Named Entity Recognition

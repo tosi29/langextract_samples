@@ -53,7 +53,7 @@ def run_dataset(
 
 
 def _update_outputs_index(output_dir: Path) -> None:
-    """Regenerates outputs/index.html with links to JSONL and HTML files."""
+    """Regenerates docs/index.html (or chosen dir) with artifact links."""
     output_dir.mkdir(parents=True, exist_ok=True)
     artifacts = {}
     for path in output_dir.iterdir():
@@ -179,8 +179,8 @@ def run_cli(
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("outputs"),
-        help="Directory for JSONL + HTML artifacts (default: ./outputs).",
+        default=Path("docs"),
+        help="Directory for JSONL + HTML artifacts (default: ./docs).",
     )
     parser.add_argument(
         "--list-datasets",
