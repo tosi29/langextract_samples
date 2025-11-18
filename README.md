@@ -61,6 +61,8 @@ run-langextract-dataset
 - `--input-text` / `--input-file`: デフォルトの入力テキストを上書き。
 - `--output-dir`: 出力フォルダ（既定 `./docs`）。
 - `--extraction-passes`: LangExtract の `extraction_passes` 値を上書き。
+- CLI は `dataset__model__passN` という命名規則で成果物を保存するため、
+  `docs/index.html` の表からモデルやパス回数をすぐ確認できます。
 
 ## データセット別の実行例
 

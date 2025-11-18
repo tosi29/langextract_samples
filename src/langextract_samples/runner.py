@@ -53,7 +53,24 @@ def run_dataset(
         config.summary_fn(result, input_text)
     else:
         print(f"Processed dataset '{dataset_key}'.")
-    return save_artifacts(result, output_dir, dataset_key)
+    friendly_model = model_id.replace("/", "_").replace(":", "_")
+    prefix = f"{dataset_key}__{friendly_model}__pass{extraction_passes}"
+    return save_artifacts(result, output_dir, prefix)
+
+
+def _parse_artifact_metadata(prefix: str) -> Dict[str, str]:
+    """Extracts dataset/model/pass information from artifact names."""
+    parts = prefix.split("__")
+    dataset_name = parts[0]
+    model_name = parts[1] if len(parts) > 1 else ""
+    pass_part = parts[2] if len(parts) > 2 else ""
+    pass_count = pass_part.replace("pass", "") if pass_part.startswith("pass") else ""
+    return {
+        "dataset": dataset_name,
+        "model": model_name.replace("_", " "),
+        "passes": pass_count or "1",
+        "prefix": prefix,
+    }
 
 
 def _ensure_jsonl_viewer(viewer_path: Path) -> None:
@@ -72,6 +89,7 @@ def _ensure_jsonl_viewer(viewer_path: Path) -> None:
     table { border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; }
     th, td { border: 1px solid #ccc; padding: 0.5rem; text-align: left; vertical-align: top; }
     th { background: #f5f5f5; }
+    td:nth-child(2) { min-width: 16rem; white-space: nowrap; }
     caption { text-align: left; font-weight: bold; margin-bottom: 0.5rem; }
     tbody tr:nth-child(even) { background: #fafafa; }
     td div { margin: 0.15rem 0; }
@@ -255,10 +273,11 @@ def _update_outputs_index(output_dir: Path) -> None:
         prefix = path.stem
         entry = artifacts.setdefault(
             prefix,
-            {"dataset": prefix, "jsonl": None, "html": None},
+            {"dataset": prefix, "jsonl": None, "html": None, "metadata": None},
         )
         if suffix == ".jsonl":
             entry["jsonl"] = path.name
+            entry["metadata"] = _parse_artifact_metadata(prefix)
             jsonl_blobs[prefix] = base64.b64encode(
                 path.read_text(encoding="utf-8").encode("utf-8")
             ).decode("ascii")
@@ -266,7 +285,10 @@ def _update_outputs_index(output_dir: Path) -> None:
             entry["html"] = path.name
     index_path = output_dir / "index.html"
     rows = []
-    for dataset in sorted(artifacts.values(), key=lambda item: item["dataset"]):
+    for dataset in sorted(
+        artifacts.values(), key=lambda item: item["metadata"]["dataset"]
+    ):
+        meta = dataset["metadata"] or _parse_artifact_metadata(dataset["dataset"])
         jsonl_name = dataset["jsonl"]
         if jsonl_name:
             viewer_href = f'jsonl_viewer.html?file={quote(jsonl_name)}'
@@ -283,7 +305,9 @@ def _update_outputs_index(output_dir: Path) -> None:
         )
         rows.append(
             "<tr>"
-            f"<td>{escape(dataset['dataset'])}</td>"
+            f"<td>{escape(meta['dataset'])}</td>"
+            f"<td>{escape(meta['model'])}</td>"
+            f"<td>{escape(meta['passes'])}</td>"
             f"<td>{jsonl_cell}</td>"
             f"<td>{html_cell}</td>"
             "</tr>"
@@ -293,7 +317,7 @@ def _update_outputs_index(output_dir: Path) -> None:
     else:
         body = (
             "<table>\n"
-            "  <thead><tr><th>Dataset</th><th>JSONL</th><th>HTML</th></tr></thead>\n"
+            "  <thead><tr><th>Dataset</th><th>Model</th><th>Passes</th><th>JSONL</th><th>HTML</th></tr></thead>\n"
             "  <tbody>\n    "
             + "\n    ".join(rows)
             + "\n  </tbody>\n</table>"
@@ -309,6 +333,7 @@ def _update_outputs_index(output_dir: Path) -> None:
     th, td {{ border: 1px solid #ccc; padding: 0.5rem; text-align: left; }}
     th {{ background: #f5f5f5; }}
     tbody tr:nth-child(even) {{ background: #fafafa; }}
+    td:nth-child(2) {{ white-space: nowrap; min-width: 16rem; }}
   </style>
 </head>
 <body>
