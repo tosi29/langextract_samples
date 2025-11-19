@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import json
 from html import escape
 from pathlib import Path
 from typing import Dict, Iterable, Optional, Sequence
@@ -265,7 +266,7 @@ def _update_outputs_index(output_dir: Path) -> None:
     for path in output_dir.iterdir():
         if not path.is_file():
             continue
-        if path.name in {"index.html", "jsonl_viewer.html"}:
+        if path.name in {"index.html", "jsonl_viewer.html", "comparison.html"}:
             continue
         suffix = path.suffix.lower()
         if suffix not in {".jsonl", ".html"}:
@@ -350,12 +351,217 @@ def _update_outputs_index(output_dir: Path) -> None:
 </head>
 <body>
   <h1>LangExtract Samples Outputs</h1>
-  <p>Artifacts are written to this directory after running the CLI.</p>
+  <p>
+    Artifacts are written to this directory after running the CLI. 
+    <a href="comparison.html"><strong>Compare Datasets</strong></a>
+  </p>
   {body}
 </body>
 </html>
 """
+    _ensure_comparison_viewer(output_dir / "comparison.html", artifacts, jsonl_blobs)
     index_path.write_text(html_text, encoding="utf-8")
+
+
+def _ensure_comparison_viewer(
+    viewer_path: Path, artifacts: Dict[str, Any], jsonl_blobs: Dict[str, str]
+) -> None:
+    """Generates a comparison viewer for multiple runs of datasets."""
+    # Build a manifest of available datasets and their runs
+    manifest = {}
+    for key, data in artifacts.items():
+        meta = data["metadata"] or _parse_artifact_metadata(key)
+        dataset_name = meta["dataset"]
+        if dataset_name not in manifest:
+            manifest[dataset_name] = []
+        
+        if data["jsonl"]:
+            manifest[dataset_name].append({
+                "model": meta["model"],
+                "passes": meta["passes"],
+                "file": data["jsonl"],
+                "data": jsonl_blobs.get(key, "")
+            })
+
+    # Sort runs for each dataset
+    for dataset in manifest:
+        manifest[dataset].sort(key=lambda x: (x["model"], int(x["passes"])))
+
+    viewer_html = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Dataset Comparison</title>
+  <style>
+    body {{ font-family: system-ui, sans-serif; margin: 1.5rem; }}
+    header {{ margin-bottom: 1.5rem; }}
+    .controls {{ margin-bottom: 1.5rem; padding: 1rem; background: #f5f5f5; border-radius: 6px; }}
+    select {{ padding: 0.5rem; font-size: 1rem; min-width: 200px; }}
+    table {{ border-collapse: collapse; width: 100%; margin-bottom: 1.5rem; table-layout: fixed; }}
+    th, td {{ border: 1px solid #ccc; padding: 0.5rem; text-align: left; vertical-align: top; word-wrap: break-word; }}
+    th {{ background: #f5f5f5; position: sticky; top: 0; z-index: 10; }}
+    .entry-row:nth-child(even) {{ background: #fafafa; }}
+    .diff-add {{ background-color: #e6ffec; }}
+    .diff-del {{ background-color: #ffebe9; }}
+    .meta-info {{ font-size: 0.85em; color: #666; margin-bottom: 0.5rem; }}
+    .extraction-item {{ border-bottom: 1px solid #eee; padding: 4px 0; }}
+    .extraction-item:last-child {{ border-bottom: none; }}
+    .attr-list {{ font-size: 0.9em; color: #444; margin-left: 1em; }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Dataset Comparison</h1>
+    <p><a href="index.html">Back to outputs index</a></p>
+  </header>
+
+  <div class="controls">
+    <label for="dataset-select">Select Dataset: </label>
+    <select id="dataset-select">
+      <option value="">-- Select a dataset --</option>
+    </select>
+  </div>
+
+  <div id="content"></div>
+
+  <script>
+    const manifest = {json.dumps(manifest)};
+
+    const selectEl = document.getElementById('dataset-select');
+    const contentEl = document.getElementById('content');
+
+    // Populate dropdown
+    Object.keys(manifest).sort().forEach(ds => {{
+        const option = document.createElement('option');
+        option.value = ds;
+        option.textContent = ds + ' (' + manifest[ds].length + ' runs)';
+        selectEl.appendChild(option);
+    }});
+
+    // Handle selection
+    selectEl.addEventListener('change', (e) => {{
+        const dataset = e.target.value;
+        if (!dataset) {{
+            contentEl.innerHTML = '';
+            return;
+        }}
+        renderComparison(dataset);
+    }});
+
+    const base64ToBytes = (base64) =>
+        Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
+
+    function renderComparison(dataset) {{
+        contentEl.innerHTML = '<p>Loading...</p>';
+        const runs = manifest[dataset];
+        
+        try {{
+            const parsedRuns = runs.map(run => {{
+                let text = "";
+                if (run.data) {{
+                    text = new TextDecoder("utf-8").decode(base64ToBytes(run.data));
+                }}
+                return {{
+                    meta: run,
+                    entries: text.trim().split(/\\n+/).map(line => {{
+                        try {{ return JSON.parse(line); }}
+                        catch(e) {{ return null; }}
+                    }})
+                }};
+            }});
+
+            buildTable(parsedRuns);
+        }} catch (err) {{
+            contentEl.innerHTML = '<p class="error">Error loading data: ' + err.message + '</p>';
+        }}
+    }}
+
+    function buildTable(runs) {{
+        if (runs.length === 0) {{
+            contentEl.innerHTML = '<p>No data found.</p>';
+            return;
+        }}
+
+        const table = document.createElement('table');
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+        
+        // Header row
+        const trHead = document.createElement('tr');
+        trHead.innerHTML = '<th>Entry</th>';
+        runs.forEach(run => {{
+            const th = document.createElement('th');
+            th.innerHTML = `
+                <div>${{run.meta.model}}</div>
+                <div class="meta-info">Passes: ${{run.meta.passes}}</div>
+                <div class="meta-info"><a href="${{run.meta.file}}" target="_blank">JSONL</a></div>
+            `;
+            trHead.appendChild(th);
+        }});
+        thead.appendChild(trHead);
+        table.appendChild(thead);
+
+        // Determine max entries
+        const maxEntries = Math.max(...runs.map(r => r.entries.length));
+
+        for (let i = 0; i < maxEntries; i++) {{
+            const tr = document.createElement('tr');
+            tr.className = 'entry-row';
+            
+            // Entry number
+            const tdNum = document.createElement('td');
+            tdNum.textContent = i + 1;
+            tr.appendChild(tdNum);
+
+            runs.forEach(run => {{
+                const td = document.createElement('td');
+                const entry = run.entries[i];
+                
+                if (entry && entry.extractions) {{
+                    entry.extractions.forEach(ext => {{
+                        const div = document.createElement('div');
+                        div.className = 'extraction-item';
+                        
+                        let html = `<strong>${{escapeHtml(ext.extraction_class)}}</strong>: ${{escapeHtml(ext.extraction_text)}}`;
+                        
+                        if (ext.attributes && Object.keys(ext.attributes).length > 0) {{
+                            html += '<div class="attr-list">';
+                            Object.entries(ext.attributes).forEach(([k, v]) => {{
+                                html += `<div>${{escapeHtml(k)}}: ${{escapeHtml(String(v))}}</div>`;
+                            }});
+                            html += '</div>';
+                        }}
+                        
+                        div.innerHTML = html;
+                        td.appendChild(div);
+                    }});
+                }} else {{
+                    td.textContent = '-';
+                }}
+                tr.appendChild(td);
+            }});
+            tbody.appendChild(tr);
+        }}
+        
+        table.appendChild(tbody);
+        contentEl.innerHTML = '';
+        contentEl.appendChild(table);
+    }}
+
+    function escapeHtml(unsafe) {{
+        if (unsafe === null || unsafe === undefined) return '';
+        return unsafe
+             .replace(/&/g, "&amp;")
+             .replace(/</g, "&lt;")
+             .replace(/>/g, "&gt;")
+             .replace(/"/g, "&quot;")
+             .replace(/'/g, "&#039;");
+    }}
+  </script>
+</body>
+</html>
+"""
+    viewer_path.write_text(viewer_html, encoding="utf-8")
 
 
 def _comma_join(items: Iterable[str]) -> str:
@@ -482,3 +688,6 @@ def main() -> None:
 
 
 __all__ = ["run_dataset", "run_cli", "main"]
+
+if __name__ == "__main__":
+    main()
