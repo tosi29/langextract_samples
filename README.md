@@ -1,36 +1,37 @@
 # LangExtract Samples
 
-This repository hosts a lightweight playground for running
-[LangExtract](https://github.com/google/langextract) with different parameter
-sets. The first step is to replicate the official Quick Start example so we
-have a known-good baseline before fanning out to other prompts or models.
+このリポジトリは、さまざまなパラメータセットで
+[LangExtract](https://github.com/google/langextract) を手軽に試すための
+プレイグラウンドです。まずは公式 README に記載されている Quick Start 例を再現し、
+既知のベースラインを確立してから他のプロンプトやモデルに展開できるようにしています。
 
-## Prerequisites
+## 前提条件
 
-1. Python 3.10+.
-2. An API key that LangExtract can use with your preferred provider.
-   - For Gemini models, create a key in
-     [Google AI Studio](https://aistudio.google.com/app/apikey).
-   - Export it as `LANGEXTRACT_API_KEY` or add it to a `.env` file:
+1. Python 3.10 以上。
+2. LangExtract が利用できる API キー。
+   - Gemini 系モデルの場合は
+     [Google AI Studio](https://aistudio.google.com/app/apikey) で作成します。
+   - `LANGEXTRACT_API_KEY` としてエクスポートするか、`.env` に追記します:
      ```bash
      export LANGEXTRACT_API_KEY="your-api-key-here"
      ```
-3. (Recommended) Create and activate a virtual environment:
+3. （推奨）仮想環境の作成と有効化:
    ```bash
    python -m venv .venv
    source .venv/bin/activate  # Windows: .venv\Scripts\activate
    ```
 
-## Install Dependencies
+## 依存関係のインストール
 
-Install the project in editable mode so the helper script is available as a CLI.
+ヘルパースクリプトを CLI から直接呼び出せるよう、編集モードでプロジェクトを
+インストールします。
 
 ```bash
 pip install -e .
 ```
 
-This pulls LangExtract from PyPI and registers the CLI entry point
-`run-langextract-dataset`.
+このコマンドで LangExtract が PyPI から取得され、`run-langextract-dataset`
+という CLI エントリーポイントが登録されます。
 
 ## 共通ランナーとデータセット
 
@@ -77,42 +78,38 @@ run-langextract-dataset romeo_quickstart \
   --output-dir docs
 ```
 
-Key options:
+主なオプション:
 
-- `--model-id`: LLM identifier recognized by LangExtract (default:
-  `gemini-2.5-flash`).
-- `--input-text`: Override the built-in Romeo & Juliet snippet with inline text.
-- `--input-file`: Provide a text file to extract from; takes precedence over
-  `--input-text`.
-- `--output-dir`: Destination directory (defaults to `./docs`).
+- `--model-id`: LangExtract が認識できる LLM ID（デフォルトは `gemini-2.5-flash`）。
+- `--input-text`: Romeo & Juliet のサンプル文をインラインテキストで上書き。
+- `--input-file`: 抽出対象のテキストファイルを指定。`--input-text` より優先されます。
+- `--output-dir`: 出力先ディレクトリ（既定は `./docs`）。
 
-The script:
+スクリプトの流れ:
 
-1. Builds the example prompt and few-shot definitions from the LangExtract
-   README.
-2. Calls `lx.extract(...)` with the provided parameters.
-3. Stores the structured results as JSONL.
-4. Generates and saves the interactive HTML visualization.
+1. LangExtract README の例からプロンプトと few-shot 定義を構築。
+2. 指定されたパラメータで `lx.extract(...)` を呼び出し。
+3. 構造化された結果を JSONL として保存。
+4. インタラクティブな HTML ビジュアライザーを生成・保存。
 
-Open the resulting HTML file (e.g.
-`docs/romeo_sample.html`) in your browser to verify the highlighted spans.
-CLI 実行後は `docs/index.html` が自動生成・更新されるので、ブラウザで開くと
-JSONL / HTML の一覧テーブルを確認できます。JSONL のリンクは内蔵ビューワ
-（`docs/jsonl_viewer.html`）に遷移します。リンクには JSONL の中身が Base64 で
-埋め込まれるため、`file://` で開いた場合でもブラウザだけで確認できます。
-ビューワでは JSONL の詳細表示に加えて、`extraction_class` / `extraction_text` /
-`attributes` をまとめたテーブルも先頭に表示します。
+生成された HTML（例: `docs/romeo_sample.html`）をブラウザで開くと、
+ハイライトされたスパンを確認できます。CLI 実行後は `docs/index.html` が自動生成・更新されるため、
+ブラウザから JSONL / HTML の一覧テーブルを参照可能です。JSONL のリンクは
+内蔵ビューワ（`docs/jsonl_viewer.html`）に遷移し、内容が Base64 で埋め込まれるので
+`file://` で開いた場合でもブラウザだけでプレビューできます。
+ビューワ冒頭には `extraction_class` / `extraction_text` / `attributes` をまとめた
+テーブルも表示されます。
 
-### Medication Named Entity Recognition
+### Medication Named Entity Recognition（薬剤 NER）
 
 [`docs/examples/medication_examples.md`](https://github.com/google/langextract/blob/main/docs/examples/medication_examples.md)
-の NER 例は `medication` データセットで単体実行できます:
+に掲載されている NER 例は `medication` データセットで単体実行できます:
 
 ```bash
 run-langextract-dataset medication --model-id gemini-2.5-pro
 ```
 
-### Medication Relationship Extraction
+### Medication Relationship Extraction（薬剤関係抽出）
 
 投与情報を `medication_group` で紐付けする例は `medication_relationship`
 データセットで実行できます:
@@ -142,7 +139,7 @@ run-langextract-dataset medication_relationship --model-id gemini-2.5-pro
   run-langextract-dataset medication_relationship_ja --model-id gemini-2.5-flash-lite
   ```
 
-## Next Steps
+## 次のステップ
 
 ### データセット定義ファイル
 
